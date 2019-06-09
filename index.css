@@ -8,6 +8,7 @@ div.blue-stripe a {
 }
 div#body {
 	text-align: center;
+	margin: auto 10px;
 }
 div#contents {
 	max-width: 960px;
