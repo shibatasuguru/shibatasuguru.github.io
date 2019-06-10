@@ -11,4 +11,9 @@ $(function(){
 	$("div#edit-button").click(function() {
 	  alert("sorry for you can't. the only thing you can really change is yourself.");
 	});
+
+	$("div.siimple-card").click(function() {
+		window.open($(this).attr('href'),'shimizuku','');
+	});
+	
 });

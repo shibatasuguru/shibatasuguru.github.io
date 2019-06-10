@@ -1,0 +1,19 @@
+﻿* {
+	margin: 0;
+	padding: 0;
+}
+body {
+	width: 4800px;
+}
+div.sea {
+	background-color: lightblue;
+}
+div.flat {
+	background-color: lightgreen;
+}
+.pure-u-1-24{
+	width: 200px;
+	height: 123px;
+	border-right: 1px solid #f4f4f4;
+	border-bottom: 1px solid #f4f4f4;
+}

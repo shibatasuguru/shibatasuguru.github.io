@@ -1,0 +1,50 @@
+﻿$(function(){
+	let sea = '駿河湾'
+	let map = [
+		{Shimizuku: '清水区', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', c09: '', c10: '', c11: '', c12: '', c13: '', c14: '', c15: '', c16: '', c17: '', c18: '', c19: '', c20: '', c21: '', c22: '', KanbaraSerizawa: '蒲原堰沢', c24: ''},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', c09: '', c10: '', Ohira: '大平', c12: '', c13: '', c14: '', c15: '', c16: '', c17: '', c18: '', c19: '', c20: '', c21: '', c22: '', KanbaraKanzawa: '蒲原神沢', c24: ''},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', c09: '', c10: '', Kouchi: '河内', Tozurazawa: '葛沢', c13: '', c14: '', c15: '', c16: '', c17: '', c18: '', Shishihara: '宍原', YuiAsou: '由比阿僧', YuiIriyama: '由比入山', c22: '', KanbaraKogane: '蒲原小金', KanbaraHigashi: '蒲原東'},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', c09: '', c10: '', Nishizato: '西里', Shigenoshima: '茂野島', c13: '', Nakagouchi: '中河内', c15: '', c16: '', c17: '', Ojimacho: '小島町', Kogouchi: '小河内', YuiNishiyamadera: '由比西山寺', YuiHigashiyamadera: '由比東山寺', KanbaraNaka: '蒲原中', KanbaraShinden: '蒲原新田', KanbaraShinei: '蒲原新栄'},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', c09: '', c10: '', Do: '土', Nunozawa: '布沢', Takayama: '高山', Wadashima: '和田島', Kiyoji: '清地', c16: '', c17: '', Yatsucho: '谷津町', Tadanumacho: '但沼町', YuiImajuku: '由比今宿', YuiYachiyo: '由比八千代', Yui: '由比', Kanbara: '蒲原', c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', Kashio: '柏尾', Umegaya: '梅ヶ谷', Ishikawa: '石川', Hachigaya: '蜂ヶ谷', Yanbara: '山原', Takahashicho: '高橋町', c11: '', Isabu: '伊佐布', Yoshiwara: '吉原', Sugiyama: '杉山', Mobata: '茂畑', c16: '', c17: '', Yagimacho: '八木間町', Tachibana: '立花', YuiTerao: '由比寺尾', YuiMachiyahara: '由比町屋原', YuiKitada: '由比北田', c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', Ohuchi: '大内', Oshikiri: '押切', c07: '', HachigayaMinamicho: '蜂ヶ谷南町', c09: '', c10: '', c11: '', c12: '', Hara: '原', Yamagiri: '山切', c15: '', c16: '', c17: '', OkitsuNakacho: '興津中町', Shogenjicho: '承元寺町', YuiHigashikurasawa: '由比東倉澤', c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', Ishikawashinmachi: '石川新町', Ishikawahoncho: '石川本町', Shimonocho: '下野町', Shimononishi: '下野西', Shimononaka: '下野中', Shimonokita: '下野北', c12: '', c13: '', Kusagaya: '草ヶ谷', Hirose: '広瀬', c16: '', c17: '', OkitsuHoncho: '興津本町', OkitsuInouecho: '興津井上町', Yuinishikurasawa: '由比西倉澤', c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', Ohuchishinden: '大内新田', Tennounishi: '天王西', Tennouhigashi: '天王東', Yayoicho: '弥生町', Shimonomidoricho: '下野緑町', Shimonohigasi: '下野東', Yasakakita: '八坂北', Iharacho: '庵原町', Nishikubo: '西久保', Obane: '尾羽', c15: '', c16: '', c17: '', OkitsuSeikenjicho: '興津清見寺町', OkitsuHigashicho: '興津東町', c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', TennouMinami: '天王南', c08: '', Iidacho: '飯田町', c10: '', Yasakahigashi: '八坂東', c12: '', c13: '', Sodeshicho: '袖師町', Yokosunanishicho: '横砂西町', Yokosunanakacho: '横砂中町', Yokosunahoncho: '横砂本町', Yokosunahigashicho: '横砂東町', c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', Torisaka: '鳥坂', c03: '', c04: '', c05: '', c06: '', c07: '', Takahashi: '高橋', c09: '', Yasakaminamicho: '八坂南町', Akiyoshicho: '秋吉町', c12: '', Miyashitacho: '宮下町', Tamachi: '田町', Yokosunaminamicho: '横砂南町', Yokosuna: '横砂', c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', Kusunoki: '楠', Nagasaki: '長崎', c04: '', Horigome: '堀込', Noujima: '能島', c07: '', Takahashicho: '高橋町', Eirakucho: '永楽町', Takahashiminamicho: '高橋南町', c11: '', c12: '', Yaguracho: '矢倉町', c14: '', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', Kusunokishinden: '楠新田', Nagasakishinden: '長崎新田', c04: '', Hanzaemonshinden: '半佐衛門新田', Kikkawa: '吉川', Kitawaki: '北脇', c08: '', Ejiridaimachi: '江尻台町', c10: '', Tenjin: '天神', Oute: '大手', Miyadaicho: '宮代町', Aizomecho: '愛染町', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', Nagasakiminamicho: '長崎南町', Nanatsushinya: '七ツ新屋', c05: '', Kitawakishinden: '北脇新田', Shibukawa: '渋川', Nishioomagaricho: '西大曲町', Higashioomagaricho: '東大曲町', c10: '', Ninomarucho: '二の丸町', Oshibacho: '小芝町', Hongoucho: '本郷町', Tsuji: '辻', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{Nakanogou: '中之郷', Kusanagikita: '草薙北', Kusanagiichiriyama: '草薙一里山', Udohoncho: '有度本町', Uwahara: '上原', Hirakawaji: '平川地', Ebisucho: '恵比寿町', Tsurumaicho: '鶴舞町', Irie: '入江', Motoshirocho: '元城町', Ejiricho: '江尻町', Takaracho: '宝町', Ejirihigashi: '江尻東', Masagocho: '真砂町', ShimizuStation: '清水駅', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{Yada: '谷田', Kusanagi: '草薙', Kusanagisugimichi: '草薙杉道', Mikadodai: '御門台', Mabasekita: '馬走北', c06: '', Oiwake: '追分', Sakurabashicho: '桜橋町', Irieminamicho: '入江南町', c10: '', Shintomicho: '新富町', c12: '', Ginza: '銀座', c14: '', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', Mabase: '馬走', c05: '', Utouzaka: '有東坂', Ootsubo: '大坪', Kasuga: '春日', Awashimacho: '淡島町', Irieokacho: '入江岡町', Hamadacho: '浜田町', Chitosecho: '千歳町', Tomoecho: '巴町', Asahicho: '旭町', Shimazakicho: '島崎町', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', Imaizumi: '今泉', Kinoshitacho: '木の下町', Funabara: '船原', Nishitakacho: '西高町', Aobacho: '青葉町', Sakuragaokacho: '桜が丘町', Kamishimizucho: '上清水町', c11: '', c12: '', Manseicho: '万世町', Matsubaracho: '松原町', Shinminatocho: '新港町', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', Funakoshi: '船越', Funakoshiminamicho: '船越南町', Funakoshihigashicho: '船越東町', Oosawacho: '大沢町', Doubayashi: '堂林', Kandacho: '神田町', Shimoshimizucho: '下清水町', Okamachi: '岡町', Kami: '上', Honmachi: '本町', Irifunacho: '入船町', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', Kawaharacho: '川原町', Tsukimicho: '月見町', Umegaoka: '梅が岡', Minamiokamachi: '南岡町', Umedacho: '梅田町', Shimizumachi: '清水町', Minatocho: '港町', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', Nakayabecho: '中矢部町', c09: '', c10: '', Sankoucho: '三光町', Yachiyocho: '八千代町', Minowacho: '美濃輪町', Tsukijicho: '築地町', Hinodecho: '日の出町', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', Shoufukucho: '庄福町', Kitayabecho: '北矢部町', c10: '', c11: '', c12: '', Matsuicho: '松井町', c14: '', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', Mukaidacho: '向田町', c10: '', c11: '', c12: '', Saiwaicho: '幸町', Seikai: '清開', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', Kitayabe: '北矢部', Minamiyabe: '南矢部', Jourikicho: '上力町', Numatacho: '沼田町', Muramatsuhara: '村松原', c11: '', c12: '', c13: '', c14: '', c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', Hitachicho: '日立町', c10: '', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', Midorigaokacho: '緑が丘町', Shinmidoricho: '新緑町', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', Muramatsu: '村松', c10: '', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', c08: '', Miyakami: '宮加三', c10: '', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', Tonosawa: '殿沢', Komagoekitamachi: '駒越北町', c10: '', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', Komagoe: '駒越', Mukaeyamacho: '迎山町', c09: '', c10: '', c11: '', c12: sea, c13: sea, c14: sea, c15: sea, c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', c06: '', c07: '', Kounancho: '港南町', c09: '', Komagoehigashicho: '駒越東町', c11: '', c12: sea, c13: sea, c14: '', c15: '', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea},
+		{c01: '', c02: '', c03: '', c04: '', c05: '', Hebiduka: '蛇塚', Zou: '増', Komagoenishi: '駒越西', Komagoenaka: '駒越中', Komagoeminamicho: '駒越南町', Orido: '折戸', Miho: '三保', c13: '', c14: '', c15: '', c16: sea, c17: sea, c18: sea, c19: sea, c20: sea, c21: sea, c22: sea, c23: sea, c24: sea}
+	];
+
+	map.forEach(function(v){
+		let m = document.createElement('div');
+		m.className = 'pure-g';
+		for (k in v) {
+			let s = document.createElement('div');
+			s.className = 'pure-u-1-24 ' + (v[k] == sea ? 'sea' : 'flat');
+			s.innerHTML = v[k];
+			m.appendChild(s);
+		}
+		$('div#contents').append(m);
+		console.log(m.innerHTML);
+	});
+});
