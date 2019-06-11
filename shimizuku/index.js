@@ -41,7 +41,7 @@
 		for (k in v) {
 			let s = document.createElement('div');
 			s.className = 'pure-u-1-24 ' + (v[k] == sea ? 'sea' : 'flat');
-			s.innerHTML = v[k];
+			s.innerHTML = v[k] != sea ? v[k] : '';
 			m.appendChild(s);
 		}
 		$('div#contents').append(m);
