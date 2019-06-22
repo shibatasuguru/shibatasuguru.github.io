@@ -38,7 +38,7 @@
 		// 20件中、テンプレートやカテゴリなどを除外し、1件目の記事を問題のテーマ記事とする
 		var articleid = 0;
 		for(var key in data.query.pages) {
-			if(data.query.pages[key].ns == 0){
+			if(data.query.pages[key].ns == 0 && data.query.pages[key].title.indexOf('曖昧さ回避') < 0){
 				articleid = key;
 				choice_list.push(data.query.pages[key].title);
 				break;
@@ -58,6 +58,7 @@
 					}
 				}
 				ajaxCategoryList(choice_list, valid_cate_array, 0);
+				console.log(choice_list);
 
 				var text = '';
 				for(var key in article_data.parse.text) {
@@ -65,6 +66,9 @@
 					break;
 				}
 				p_tags = format_tag_array(text, "p");
+
+				var questiontext = '';
+				questiontext = create_question_text(p_tags);
 			});
 		}else{
 			alert(1);
@@ -88,16 +92,35 @@ function format_tag_array(text, tag) {
 
 function shuffle_array(array) {
 	for(var i = array.length - 1; i > 0; i--){
-	    var r = Math.floor(Math.random() * (i + 1));
-	    var tmp = array[i];
-	    array[i] = array[r];
-	    array[r] = tmp;
+		var r = Math.floor(Math.random() * (i + 1));
+		var tmp = array[i];
+		array[i] = array[r];
+		array[r] = tmp;
 	}
 	return array;
 }
 
-function question_text() {
+function create_question_text(p_tags) {
+	var text = '';
+	for(var i=0; i<p_tags.length; i++) {
+		if(p_tags[i].indexOf("。") >= 0) {
+			text = p_tags[i];
+			break;
+		}
+	}
+	text = text_middle_cut(text, "（", "）");
+	text = text_middle_cut(text, "[", "]");
+	text = text.slice(text.indexOf("、")+1).split("。").join('で、').replace(/\r?\n/g,"").slice(0, -2) + "のは次のうちどれか。";
 
+	console.log(text);
+	return text;
+}
+
+function text_middle_cut(text, start_char, end_char) {
+	while(text.indexOf(start_char) >= 0 && text.indexOf(end_char) >= 0){
+		text = text.slice(0, text.indexOf(start_char)) + text.slice(text.indexOf(end_char)+1);
+	}
+	return text;
 }
 
 /*
