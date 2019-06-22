@@ -1,9 +1,9 @@
-$(function(){
-	// Œ¾Œê‚ğİ’è
+ï»¿$(function(){
+	// è¨€èªã‚’è¨­å®š
 	var lang = 'ja';
-	// ‘I‘ğˆ”‚ğİ’è
+	// é¸æŠè‚¢æ•°ã‚’è¨­å®š
 	var choice_num = 4;
-	// ‘I‘ğˆ
+	// é¸æŠè‚¢
 	var choice_list = [];
 
 	function ajaxCategoryList(choice_list, cate_name, cate_name_cnt) {
@@ -29,14 +29,14 @@ $(function(){
 		});
 	}
 
-	// –â‘è‚Ìì¬
+	// å•é¡Œã®ä½œæˆ
 	$.ajax({
-		// –â‘è‚Æ‚È‚éwikipedia‹L–Œó•â‚ğ20Œæ“¾
+		// å•é¡Œã¨ãªã‚‹wikipediaè¨˜äº‹å€™è£œã‚’20ä»¶å–å¾—
 		url: 'https://'+lang+'.wikipedia.org/w/api.php?format=json&action=query&generator=random&grnlimit=20',
 		data: {format: 'json'},
 		dataType: 'jsonp'
 	}).done(function (data){
-		// 20Œ’†Aƒeƒ“ƒvƒŒ[ƒg‚âƒJƒeƒSƒŠ‚È‚Ç‚ğœŠO‚µA1Œ–Ú‚Ì‹L–‚ğ–â‘è‚Ìƒe[ƒ}‹L–‚Æ‚·‚é
+		// 20ä»¶ä¸­ã€ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‚„ã‚«ãƒ†ã‚´ãƒªãªã©ã‚’é™¤å¤–ã—ã€1ä»¶ç›®ã®è¨˜äº‹ã‚’å•é¡Œã®ãƒ†ãƒ¼ãƒè¨˜äº‹ã¨ã™ã‚‹
 		var articleid = 0;
 		for(var key in data.query.pages) {
 			if(data.query.pages[key].ns == 0){
@@ -51,7 +51,7 @@ $(function(){
 				data: {format: 'json'},
 				dataType: 'jsonp'
 			}).done(function (article_data){
-				// ‘I‘ğˆ‚Ìì¬
+				// é¸æŠè‚¢ã®ä½œæˆ
 				var valid_cate_array = [];
 				for(var cate_key in article_data.parse.categories) {
 					if(article_data.parse.categories[cate_key]["hidden"] === undefined) {
@@ -77,11 +77,11 @@ $(function(){
 
 function format_tag_array(text, tag) {
 	var array = [];
-	// DOMParserƒIƒuƒWƒFƒNƒg
+	// DOMParserã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 	var parser = new DOMParser();
-	// HTML•¶š—ñ‚ğƒp[ƒX‚µAdocumentƒIƒuƒWƒFƒNƒg‚ğ•Ô‚·
+	// HTMLæ–‡å­—åˆ—ã‚’ãƒ‘ãƒ¼ã‚¹ã—ã€documentã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’è¿”ã™
 	var doc = parser.parseFromString(text, "text/html");
-	// documentƒIƒuƒWƒFƒNƒg‚©‚çŠY“–‚Ìƒ^ƒO‚ÌinnerText‚ğ”z—ñ‚Å•Ô‚·
+	// documentã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‹ã‚‰è©²å½“ã®ã‚¿ã‚°ã®innerTextã‚’é…åˆ—ã§è¿”ã™
 	var tag_array = doc.querySelectorAll(tag);
 	for( var i=0; i<tag_array.length; i++) {
 	  array.push(tag_array[i].innerText);
@@ -105,9 +105,9 @@ function question_text() {
 
 /*
 
-TODO: B–†‚³‰ñ”ğ‚Ö‚Ì‘Î‰
-•ª‰¹‹L† // https://ja.wikipedia.org/w/api.php?action=parse&pageid=3542&format=xml
+TODO: æ›–æ˜§ã•å›é¿ã¸ã®å¯¾å¿œ
+åˆ†éŸ³è¨˜å· // https://ja.wikipedia.org/w/api.php?action=parse&pageid=3542&format=xml
 
-TODO: –â‘è•¶‚Éˆê”Ô“K‚µ‚½ƒJƒeƒSƒŠ‚Ì‘I‘ğB
+TODO: å•é¡Œæ–‡ã«ä¸€ç•ªé©ã—ãŸã‚«ãƒ†ã‚´ãƒªã®é¸æŠã€‚
 
 */
