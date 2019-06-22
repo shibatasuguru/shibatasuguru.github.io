@@ -7,16 +7,15 @@
 	var choice_list = [];
 
 	function ajaxCategoryList(choice_list, cate_name, cate_name_cnt) {
-	  $.ajax({
+		$.ajax({
 			url: 'https://'+lang+'.wikipedia.org/w/api.php?action=query&cmtitle='+encodeURI('Category:'+cate_name[cate_name_cnt])+'&cmlimit=10000&list=categorymembers&format=json',
 			data: {format: 'json'},
-      async: false,
 			dataType: 'jsonp'
-	  }).done(function(category_data) {
+		}).done(function(category_data) {
 			var candidate_choice = [];
 			for( var i=0; i<category_data.query.categorymembers.length; i++) {
 				if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0) {
-			  	candidate_choice.push(category_data.query.categorymembers[i].title);
+					candidate_choice.push(category_data.query.categorymembers[i].title);
 				}
 			}
 			candidate_choice = shuffle_array(candidate_choice);
@@ -40,7 +39,7 @@
 		var articleid = 0;
 		for(var key in data.query.pages) {
 			if(data.query.pages[key].ns == 0){
-			  articleid = key;
+				articleid = key;
 				choice_list.push(data.query.pages[key].title);
 				break;
 			}
@@ -59,7 +58,6 @@
 					}
 				}
 				ajaxCategoryList(choice_list, valid_cate_array, 0);
-				console.log(choice_list);
 
 				var text = '';
 				for(var key in article_data.parse.text) {
@@ -67,7 +65,6 @@
 					break;
 				}
 				p_tags = format_tag_array(text, "p");
-				console.log(p_tags);
 			});
 		}else{
 			alert(1);
