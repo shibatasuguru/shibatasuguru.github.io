@@ -1,79 +1,164 @@
 ﻿$(function(){
-	// 言語を設定
+	// 言語
 	var lang = 'ja';
-	// 選択肢数を設定
+	// 選択肢数
 	var choice_num = 4;
+	// 問題文
+	var question_text = '';
 	// 選択肢
 	var choice_list = [];
+	// 問題となる記事と紐づくカテゴリ(関連度の高い順)
+	var category_list = [];
 
-	function ajaxCategoryList(choice_list, cate_name, cate_name_cnt) {
-		$.ajax({
-			url: 'https://'+lang+'.wikipedia.org/w/api.php?action=query&cmtitle='+encodeURI('Category:'+cate_name[cate_name_cnt])+'&cmlimit=10000&list=categorymembers&format=json',
-			data: {format: 'json'},
-			dataType: 'jsonp'
-		}).done(function(category_data) {
-			var candidate_choice = [];
-			for( var i=0; i<category_data.query.categorymembers.length; i++) {
-				if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0) {
-					candidate_choice.push(category_data.query.categorymembers[i].title);
+	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
+
+	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeQuestionText).then(getCategoryWithRelevance).then(createChoiceist).catch(onError);
+
+	/*
+	出題対象となる記事をランダムで決定する
+	return int 記事のページID
+	*/
+	function getPageid() {
+    return new Promise(function(resolve, reject) {
+			$.ajax({
+				// wikipedia記事候補を20件取得
+				url: 'https://'+lang+'.wikipedia.org/w/api.php?format=json&action=query&generator=random&grnlimit=20',
+				data: {format: 'json'},
+				dataType: 'jsonp'
+			}).done(function (data){
+				for(var key in data.query.pages) {
+					if(data.query.pages[key].ns == 0 && data.query.pages[key].title.indexOf('曖昧さ回避') < 0){
+						choice_list.push(parenthesis_cut(data.query.pages[key].title));
+						console.log(choice_list);
+						resolve(key);
+						break;
+					}
 				}
-			}
-			candidate_choice = shuffle_array(candidate_choice);
-			while (choice_list.length < choice_num && candidate_choice.length > 0) {
-				choice_list.push(candidate_choice.shift());
-			}
-			if (choice_list.length < choice_num) {
-				ajaxCategoryList(choice_list, cate_name, cate_name_cnt + 1);
-			}
+			});
 		});
 	}
 
-	// 問題の作成
-	$.ajax({
-		// 問題となるwikipedia記事候補を20件取得
-		url: 'https://'+lang+'.wikipedia.org/w/api.php?format=json&action=query&generator=random&grnlimit=20',
-		data: {format: 'json'},
-		dataType: 'jsonp'
-	}).done(function (data){
-		// 20件中、テンプレートやカテゴリなどを除外し、1件目の記事を問題のテーマ記事とする
-		var articleid = 0;
-		for(var key in data.query.pages) {
-			if(data.query.pages[key].ns == 0 && data.query.pages[key].title.indexOf('曖昧さ回避') < 0){
-				articleid = key;
-				choice_list.push(data.query.pages[key].title);
-				break;
-			}
-		}
-		if(articleid > 0) {
+	/*
+	出題対象となる記事を取得する
+	return 記事
+	*/
+	function getPageContent(pageid) {
+    return new Promise(function(resolve, reject) {
 			$.ajax({
-				url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+articleid,
+				url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+pageid,
 				data: {format: 'json'},
 				dataType: 'jsonp'
-			}).done(function (article_data){
-				// 選択肢の作成
-				var valid_cate_array = [];
-				for(var cate_key in article_data.parse.categories) {
-					if(article_data.parse.categories[cate_key]["hidden"] === undefined) {
-						valid_cate_array.push(article_data.parse.categories[cate_key]["*"]);
-					}
-				}
-				ajaxCategoryList(choice_list, valid_cate_array, 0);
-				console.log(choice_list);
-
-				var text = '';
-				for(var key in article_data.parse.text) {
-					text = article_data.parse.text[key];
-					break;
-				}
-				p_tags = format_tag_array(text, "p");
-
-				var questiontext = '';
-				questiontext = create_question_text(p_tags);
+			}).done(function (data){
+				resolve(data);
 			});
-		}else{
-			alert(1);
-		}
-	});
+		});
+	}
+
+	// 問題文を作成する
+	function analyzeQuestionText(data) {
+    return new Promise(function(resolve, reject) {
+			var text = '';
+			for(var key in data.parse.text) {
+				text = data.parse.text[key];
+				break;
+			}
+			var question_text_array = format_tag_array(text, "p");
+			for(var i=0; i<question_text_array.length; i++) {
+				if(question_text_array[i].indexOf("。") > 0 && question_text_array[i].indexOf("この記事には複数の") < 0) {
+					question_text += question_text_array[i];
+				}
+			}
+			
+			question_text = text_middle_cut(question_text, '[', ']');
+console.log(question_text);
+			$.ajax({
+				url: 'https://labs.goo.ne.jp/api/morph',
+				dataType: 'json',
+				type: 'POST',
+				data: {app_id: goo_api_id, sentence: question_text},
+			}).done(function(morph_data) {
+console.log(morph_data);
+				resolve(data);
+			});
+		});
+	}
+
+	/*
+	出題対象となる記事と関連するカテゴリを取得し、類似度を取得する
+	*/
+	function getCategoryWithRelevance(data) {
+    return new Promise(function(resolve, reject) {
+			// 有効なカテゴリ一覧を取得
+			var valid_cate_list = [];
+			for(var cate_key in data.parse.categories) {
+				if(data.parse.categories[cate_key]["hidden"] === undefined) {
+					valid_cate_list.push(data.parse.categories[cate_key]["*"]);
+				}
+			}
+
+			var category_array = new Array();
+			// 回帰関数で、カテゴリ名と問題文の類似度を取得
+			var getRelevance = function() {
+				var cate = valid_cate_list.shift();
+				$.ajax({
+					url: 'https://labs.goo.ne.jp/api/textpair',
+					type: 'POST',
+					data: JSON.stringify({app_id: goo_api_id, text1: cate, text2: question_text}),
+				}).done(function(data) {
+					category_array[cate] = data.score;
+					if (valid_cate_list.length) {
+						getRelevance();
+					}
+					else {
+						// 類似度の高い順にソート
+						for(var key in category_array) category_list.push(key);
+						function Compare(a,b){
+						    return category_array[b]-category_array[a];
+						}
+						category_list.sort(Compare);
+						resolve(data);
+					}
+				});
+			};
+			getRelevance();
+		});
+	}
+
+	// 選択肢を作成する
+	function createChoiceist(data) {
+    return new Promise(function(resolve, reject) {
+			var getCategoryList = function() {
+				var cate = category_list.shift();
+				$.ajax({
+					url: 'https://'+lang+'.wikipedia.org/w/api.php?action=query&cmtitle='+encodeURI('Category:'+cate)+'&cmlimit=10000&list=categorymembers&format=json',
+					data: {format: 'json'},
+					dataType: 'jsonp'
+				}).done(function(category_data) {
+					var candidate_choice_list = [];
+					for( var i=0; i<category_data.query.categorymembers.length; i++) {
+						if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0) {
+							candidate_choice_list.push(category_data.query.categorymembers[i].title);
+						}
+					}
+					candidate_choice_list = shuffle_array(candidate_choice_list);
+					while (choice_list.length < choice_num && candidate_choice_list.length > 0) {
+						choice_list.push(parenthesis_cut(candidate_choice_list.shift()));
+					}
+					if (choice_list.length < choice_num) {
+						getCategoryList();
+					}
+					else {
+						resolve(data);
+					}
+				});
+			};
+			getCategoryList();
+		});
+	}
+
+	function onError(error) {
+		console.log("error = " + error + "\r\n");
+	}
 });
 
 function format_tag_array(text, tag) {
@@ -100,20 +185,8 @@ function shuffle_array(array) {
 	return array;
 }
 
-function create_question_text(p_tags) {
-	var text = '';
-	for(var i=0; i<p_tags.length; i++) {
-		if(p_tags[i].indexOf("。") >= 0) {
-			text = p_tags[i];
-			break;
-		}
-	}
-	text = text_middle_cut(text, "（", "）");
-	text = text_middle_cut(text, "[", "]");
-	text = text.slice(text.indexOf("、")+1).split("。").join('で、').replace(/\r?\n/g,"").slice(0, -2) + "のは次のうちどれか。";
-
-	console.log(text);
-	return text;
+function parenthesis_cut(text) {
+	return text_middle_cut(text, '(', ')').replace(' ', '');
 }
 
 function text_middle_cut(text, start_char, end_char) {
@@ -128,6 +201,9 @@ function text_middle_cut(text, start_char, end_char) {
 TODO: 曖昧さ回避への対応
 分音記号 // https://ja.wikipedia.org/w/api.php?action=parse&pageid=3542&format=xml
 
-TODO: 問題文に一番適したカテゴリの選択。
+。が含まれていない文章はカットする
+[]の数字は外す
+。単位で分割する。
+正解が含まれている文書はカットする。
 
 */
