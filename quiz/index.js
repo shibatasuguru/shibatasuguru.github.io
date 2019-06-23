@@ -19,7 +19,7 @@
 	return int 記事のページID
 	*/
 	function getPageid() {
-    return new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			$.ajax({
 				// wikipedia記事候補を20件取得
 				url: 'https://'+lang+'.wikipedia.org/w/api.php?format=json&action=query&generator=random&grnlimit=20',
@@ -40,10 +40,9 @@
 
 	/*
 	出題対象となる記事を取得する
-	return 記事
 	*/
 	function getPageContent(pageid) {
-    return new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			$.ajax({
 				url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+pageid,
 				data: {format: 'json'},
@@ -56,20 +55,24 @@
 
 	// 問題文を作成する
 	function analyzeQuestionText(data) {
-    return new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			var text = '';
 			for(var key in data.parse.text) {
 				text = data.parse.text[key];
 				break;
 			}
-			var question_text_array = format_tag_array(text, "p");
-			for(var i=0; i<question_text_array.length; i++) {
-				if(question_text_array[i].indexOf("。") > 0 && question_text_array[i].indexOf("この記事には複数の") < 0) {
-					question_text += question_text_array[i];
+			var article_text_array = format_tag_array(text, "p");
+			var article_text = '';
+			for(var i=0; i<article_text_array.length; i++) {
+				if(article_text_array[i].indexOf("。") > 0 && article_text_array[i].indexOf("この記事には複数の") < 0) {
+					article_text += text_middle_cut(article_text_array[i], '[', ']');
 				}
 			}
+			var article_sentence = article_text.split("。");
+			question_text = article_sentence[0];
 			
-			question_text = text_middle_cut(question_text, '[', ']');
+			var question_text_array = [];
+			
 console.log(question_text);
 			$.ajax({
 				url: 'https://labs.goo.ne.jp/api/morph',
@@ -77,7 +80,16 @@ console.log(question_text);
 				type: 'POST',
 				data: {app_id: goo_api_id, sentence: question_text},
 			}).done(function(morph_data) {
-console.log(morph_data);
+console.log(morph_data.word_list);
+				for(var i=0; i<morph_data.word_list.length; i++) {
+					for(var j=0; j<morph_data.word_list[i].length; j++) {
+						if(morph_data.word_list[i][j][1] != '空白') {
+							question_text_array.push({word: morph_data.word_list[i][j][0], part_of_speech: morph_data.word_list[i][j][1]});
+						}
+					}
+				}
+console.log(question_text_array);
+				
 				resolve(data);
 			});
 		});
@@ -87,7 +99,7 @@ console.log(morph_data);
 	出題対象となる記事と関連するカテゴリを取得し、類似度を取得する
 	*/
 	function getCategoryWithRelevance(data) {
-    return new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			// 有効なカテゴリ一覧を取得
 			var valid_cate_list = [];
 			for(var cate_key in data.parse.categories) {
@@ -126,7 +138,7 @@ console.log(morph_data);
 
 	// 選択肢を作成する
 	function createChoiceist(data) {
-    return new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			var getCategoryList = function() {
 				var cate = category_list.shift();
 				$.ajax({
