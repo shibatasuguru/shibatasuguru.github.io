@@ -3,16 +3,20 @@
 	var lang = 'ja';
 	// 選択肢数
 	var choice_num = 4;
+	// 記事テキスト配列
+	var article_sentence = [];
 	// 問題文
 	var question_text = '';
 	// 選択肢
 	var choice_list = [];
 	// 問題となる記事と紐づくカテゴリ(関連度の高い順)
 	var category_list = [];
+	
+	var questional_word = '';
 
 	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
 
-	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeQuestionText).then(getCategoryWithRelevance).then(createChoiceist).catch(onError);
+	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).catch(onError);
 
 	/*
 	出題対象となる記事をランダムで決定する
@@ -53,8 +57,8 @@
 		});
 	}
 
-	// 問題文を作成する
-	function analyzeQuestionText(data) {
+	// 記事の文章を解析する
+	function analyzeArticleText(data) {
 		return new Promise(function(resolve, reject) {
 			var text = '';
 			for(var key in data.parse.text) {
@@ -68,18 +72,16 @@
 					article_text += text_middle_cut(article_text_array[i], '[', ']');
 				}
 			}
-			var article_sentence = article_text.split("。");
-			question_text = article_sentence[0];
+			article_sentence = article_text.split("。");
 			
-			var question_text_array = [];
 			
-console.log(question_text);
 			$.ajax({
 				url: 'https://labs.goo.ne.jp/api/morph',
 				dataType: 'json',
 				type: 'POST',
-				data: {app_id: goo_api_id, sentence: question_text},
+				data: {app_id: goo_api_id, sentence: article_sentence[0]},
 			}).done(function(morph_data) {
+				var question_text_array = [];
 console.log(morph_data.word_list);
 				for(var i=0; i<morph_data.word_list.length; i++) {
 					for(var j=0; j<morph_data.word_list[i].length; j++) {
@@ -88,11 +90,47 @@ console.log(morph_data.word_list);
 						}
 					}
 				}
-console.log(question_text_array);
-				
+				CreateQuestionText(question_text_array);
+console.log(question_text);
 				resolve(data);
 			});
 		});
+	}
+	
+	// 問題文を作成する
+	function CreateQuestionText(question_text_array) {
+		var first_postpositional_particle = 0;
+		for(var i=0; i<question_text_array.length; i++) {
+			if(question_text_array[i].part_of_speech.indexOf('連用助詞') >= 0) {
+				first_postpositional_particle = i;
+				break;
+			}
+		}
+		
+		var last_noun_num = 0;
+		// 文章内で一番最後の名詞または括弧の位置を取得
+		for(var i=0; i<question_text_array.length; i++) {
+			if(question_text_array[i].part_of_speech.indexOf('名詞') >= 0 || question_text_array[i].part_of_speech.indexOf('括弧') >= 0) {
+				last_noun_num = i;
+			}
+			if(question_text_array[i].part_of_speech.indexOf('名詞') >= 0) {
+				questional_word = question_text_array[i].word;
+			}
+			
+		}
+		
+		var reading_point_cut_flg = true;
+		for(var i=first_postpositional_particle+1; i<=last_noun_num; i++) {
+			if (reading_point_cut_flg && question_text_array[i].part_of_speech.indexOf('読点') >= 0) {
+			
+			}
+			else {
+				reading_point_cut_flg = false;
+				question_text += question_text_array[i].word;
+			}
+		}
+		
+		question_text = '次のうち、' + question_text + 'はどれか。';
 	}
 
 	/*
@@ -107,7 +145,7 @@ console.log(question_text_array);
 					valid_cate_list.push(data.parse.categories[cate_key]["*"]);
 				}
 			}
-
+console.log(valid_cate_list);
 			var category_array = new Array();
 			// 回帰関数で、カテゴリ名と問題文の類似度を取得
 			var getRelevance = function() {
@@ -115,7 +153,7 @@ console.log(question_text_array);
 				$.ajax({
 					url: 'https://labs.goo.ne.jp/api/textpair',
 					type: 'POST',
-					data: JSON.stringify({app_id: goo_api_id, text1: cate, text2: question_text}),
+					data: JSON.stringify({app_id: goo_api_id, text1: cate, text2: questional_word}),
 				}).done(function(data) {
 					category_array[cate] = data.score;
 					if (valid_cate_list.length) {
@@ -137,7 +175,7 @@ console.log(question_text_array);
 	}
 
 	// 選択肢を作成する
-	function createChoiceist(data) {
+	function createChoiceList(data) {
 		return new Promise(function(resolve, reject) {
 			var getCategoryList = function() {
 				var cate = category_list.shift();
