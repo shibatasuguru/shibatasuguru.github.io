@@ -19,8 +19,7 @@
 	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).catch(onError);
 
 	/*
-	出題対象となる記事をランダムで決定する
-	return int 記事のページID
+	出題対象となる記事をランダムで取得する
 	*/
 	function getPageid() {
 		return new Promise(function(resolve, reject) {
@@ -30,14 +29,7 @@
 				data: {format: 'json'},
 				dataType: 'jsonp'
 			}).done(function (data){
-				for(var key in data.query.pages) {
-					if(data.query.pages[key].ns == 0 && data.query.pages[key].title.indexOf('曖昧さ回避') < 0){
-						choice_list.push(parenthesis_cut(data.query.pages[key].title));
-						console.log(choice_list);
-						resolve(key);
-						break;
-					}
-				}
+				resolve(data);
 			});
 		});
 	}
@@ -45,15 +37,40 @@
 	/*
 	出題対象となる記事を取得する
 	*/
-	function getPageContent(pageid) {
+	function getPageContent(data) {
 		return new Promise(function(resolve, reject) {
-			$.ajax({
-				url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+pageid,
-				data: {format: 'json'},
-				dataType: 'jsonp'
-			}).done(function (data){
-				resolve(data);
-			});
+			var data_query_pages = [];
+			for(var key in data.query.pages) {
+				data_query_pages.push(data.query.pages[key])
+			}
+			var get_page_content = function() {
+				var data_query_page = data_query_pages.shift();
+				if(data_query_page.ns == 0 && data_query_page.title.indexOf('曖昧さ回避') < 0) {
+					$.ajax({
+						url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+data_query_page.pageid,
+						data: {format: 'json'},
+						dataType: 'jsonp'
+					}).done(function (data){
+						var is_ambiguity = false;
+						for(var cate_key in data.parse.categories) {
+							if(data.parse.categories[cate_key]["*"].indexOf('曖昧さ回避') >= 0) {
+								is_ambiguity = true;
+							}
+						}
+						
+						if (is_ambiguity) {
+							get_page_content();
+						}
+						else {
+							resolve(data);
+						}
+					});
+				}
+				else {
+					get_page_content();
+				}
+			};
+			get_page_content();
 		});
 	}
 
@@ -145,7 +162,6 @@ console.log(question_text);
 					valid_cate_list.push(data.parse.categories[cate_key]["*"]);
 				}
 			}
-console.log(valid_cate_list);
 			var category_array = new Array();
 			// 回帰関数で、カテゴリ名と問題文の類似度を取得
 			var getRelevance = function() {
@@ -198,6 +214,7 @@ console.log(valid_cate_list);
 						getCategoryList();
 					}
 					else {
+console.log(choice_list);
 						resolve(data);
 					}
 				});
