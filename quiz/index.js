@@ -7,6 +7,8 @@
 	var article_sentence = [];
 	// 問題文
 	var question_text = '';
+	// 正解
+	var answer_text = '';
 	// 選択肢
 	var choice_list = [];
 	// 問題となる記事と紐づくカテゴリ(関連度の高い順)
@@ -16,12 +18,13 @@
 
 	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
 
-	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).catch(onError);
+	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
 
 	/*
 	出題対象となる記事をランダムで取得する
 	*/
 	function getPageid() {
+$('div#content').html('Now Loading...');
 		return new Promise(function(resolve, reject) {
 			$.ajax({
 				// wikipedia記事候補を20件取得
@@ -29,6 +32,7 @@
 				data: {format: 'json'},
 				dataType: 'jsonp'
 			}).done(function (data){
+console.log(1);
 				resolve(data);
 			});
 		});
@@ -63,7 +67,9 @@
 							get_page_content();
 						}
 						else {
+							answer_text = data_query_page_title;
 							choice_list.push(parenthesis_cut(data_query_page_title));
+console.log(2);
 							resolve(data);
 						}
 					});
@@ -101,7 +107,6 @@
 				data: {app_id: goo_api_id, sentence: article_sentence[0]},
 			}).done(function(morph_data) {
 				var question_text_array = [];
-console.log(morph_data.word_list);
 				for(var i=0; i<morph_data.word_list.length; i++) {
 					for(var j=0; j<morph_data.word_list[i].length; j++) {
 						if(morph_data.word_list[i][j][1] != '空白') {
@@ -110,7 +115,7 @@ console.log(morph_data.word_list);
 					}
 				}
 				CreateQuestionText(question_text_array);
-console.log(question_text);
+console.log(3);
 				resolve(data);
 			});
 		});
@@ -184,6 +189,7 @@ console.log(question_text);
 						    return category_array[b]-category_array[a];
 						}
 						category_list.sort(Compare);
+console.log(4);
 						resolve(data);
 					}
 				});
@@ -203,7 +209,7 @@ console.log(question_text);
 					dataType: 'jsonp'
 				}).done(function(category_data) {
 					var candidate_choice_list = [];
-					for( var i=0; i<category_data.query.categorymembers.length; i++) {
+					for(var i=0; i<category_data.query.categorymembers.length; i++) {
 						if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0) {
 							candidate_choice_list.push(category_data.query.categorymembers[i].title);
 						}
@@ -216,12 +222,28 @@ console.log(question_text);
 						getCategoryList();
 					}
 					else {
-console.log(choice_list);
+console.log(5);
 						resolve(data);
 					}
 				});
 			};
 			getCategoryList();
+		});
+	}
+
+	// 選択肢を作成する
+	function viewPage(data) {
+		return new Promise(function(resolve, reject) {
+console.log(question_text);
+console.log(choice_list);
+			$('div#content').html('');
+			$('div#content').append('<div id="question">Q.' + question_text + '</div>');
+			choice_list = shuffle_array(choice_list);
+			for(var i=0; i<choice_list.length; i++) {
+				$('div#content').append('<div id="answer_"' + (i+1) + '>' + (i+1) + '. ' + choice_list[i] + '</div>');
+			}
+			$('div#content').append('<p></p>');
+			$('div#content').append('<div id="answer">A.' + answer_text + '</div>');
 		});
 	}
 
@@ -264,15 +286,3 @@ function text_middle_cut(text, start_char, end_char) {
 	}
 	return text;
 }
-
-/*
-
-TODO: 曖昧さ回避への対応
-分音記号 // https://ja.wikipedia.org/w/api.php?action=parse&pageid=3542&format=xml
-
-。が含まれていない文章はカットする
-[]の数字は外す
-。単位で分割する。
-正解が含まれている文書はカットする。
-
-*/
