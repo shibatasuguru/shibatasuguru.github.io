@@ -11,6 +11,8 @@
 	var answer_text = '';
 	// 選択肢
 	var choice_list = [];
+	// 正解選択肢
+	var answer_of_choice_list = 0;
 	// 問題となる記事と紐づくカテゴリ(関連度の高い順)
 	var category_list = [];
 	
@@ -18,13 +20,15 @@
 
 	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
 
+	var display_hint_num = 0;
+
 	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
 
 	/*
 	出題対象となる記事をランダムで取得する
 	*/
 	function getPageid() {
-$('div#content').html('Now Loading...');
+		$('div#content').html('Now Loading...');
 		return new Promise(function(resolve, reject) {
 			$.ajax({
 				// wikipedia記事候補を20件取得
@@ -32,7 +36,6 @@ $('div#content').html('Now Loading...');
 				data: {format: 'json'},
 				dataType: 'jsonp'
 			}).done(function (data){
-console.log(1);
 				resolve(data);
 			});
 		});
@@ -49,7 +52,7 @@ console.log(1);
 			}
 			var get_page_content = function() {
 				var data_query_page = data_query_pages.shift();
-				if(data_query_page.ns == 0 && data_query_page.title.indexOf('曖昧さ回避') < 0) {
+				if(data_query_page.ns == 0) {
 					var data_query_page_title = data_query_page.title;
 					$.ajax({
 						url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+data_query_page.pageid,
@@ -62,14 +65,13 @@ console.log(1);
 								is_ambiguity = true;
 							}
 						}
-						
+						// 曖昧さ回避のページは問題として使用しない
 						if (is_ambiguity) {
 							get_page_content();
 						}
 						else {
-							answer_text = data_query_page_title;
-							choice_list.push(parenthesis_cut(data_query_page_title));
-console.log(2);
+							answer_text = parenthesis_cut(data_query_page_title);
+							choice_list.push(answer_text);
 							resolve(data);
 						}
 					});
@@ -98,8 +100,6 @@ console.log(2);
 				}
 			}
 			article_sentence = article_text.split("。");
-			
-			
 			$.ajax({
 				url: 'https://labs.goo.ne.jp/api/morph',
 				dataType: 'json',
@@ -115,7 +115,7 @@ console.log(2);
 					}
 				}
 				CreateQuestionText(question_text_array);
-console.log(3);
+				CreateHint();
 				resolve(data);
 			});
 		});
@@ -124,8 +124,14 @@ console.log(3);
 	// 問題文を作成する
 	function CreateQuestionText(question_text_array) {
 		var first_postpositional_particle = 0;
+		var is_expected = false;
 		for(var i=0; i<question_text_array.length; i++) {
-			if(question_text_array[i].part_of_speech.indexOf('連用助詞') >= 0) {
+			// 括弧の中にいる間は除外
+			if(question_text_array[i].part_of_speech.indexOf('括弧') >= 0) {
+				is_expected = !is_expected;
+			}
+			// 最初に出てくる連用助詞（～は）の位置を取得
+			if(question_text_array[i].part_of_speech.indexOf('連用助詞') >= 0 && !is_expected) {
 				first_postpositional_particle = i;
 				break;
 			}
@@ -144,7 +150,7 @@ console.log(3);
 		}
 		
 		var reading_point_cut_flg = true;
-		for(var i=first_postpositional_particle+1; i<=last_noun_num; i++) {
+		for (var i=first_postpositional_particle+1; i<=last_noun_num; i++) {
 			if (reading_point_cut_flg && question_text_array[i].part_of_speech.indexOf('読点') >= 0) {
 			
 			}
@@ -155,6 +161,29 @@ console.log(3);
 		}
 		
 		question_text = '次のうち、' + question_text + 'はどれか。';
+	}
+
+	function CreateHint() {
+		var tmp_article_sentence = article_sentence;
+		article_sentence = [];
+
+		for (var i=1; i<tmp_article_sentence.length; i++) {
+			var is_use_hint = true;
+			if (tmp_article_sentence[i].replace(/\r?\n/g, '').length > 0) {
+				for (var a=0; a<answer_text.length; a++) {
+					if (tmp_article_sentence[i].indexOf(answer_text.substr(a,2)) >= 0) {
+						is_use_hint = false;
+						break;
+					}
+				}
+			} else {
+				is_use_hint = false;
+			}
+
+			if (is_use_hint) {
+				article_sentence.push(tmp_article_sentence[i]);
+			}
+		}
 	}
 
 	/*
@@ -189,7 +218,6 @@ console.log(3);
 						    return category_array[b]-category_array[a];
 						}
 						category_list.sort(Compare);
-console.log(4);
 						resolve(data);
 					}
 				});
@@ -222,7 +250,6 @@ console.log(4);
 						getCategoryList();
 					}
 					else {
-console.log(5);
 						resolve(data);
 					}
 				});
@@ -231,26 +258,52 @@ console.log(5);
 		});
 	}
 
-	// 選択肢を作成する
+	// 画面を作成する
 	function viewPage(data) {
 		return new Promise(function(resolve, reject) {
-console.log(question_text);
-console.log(choice_list);
 			$('div#content').html('');
-			$('div#content').append('<div id="question">Q.' + question_text + '</div>');
-			choice_list = shuffle_array(choice_list);
-			for(var i=0; i<choice_list.length; i++) {
-				$('div#content').append('<div id="answer_"' + (i+1) + '>' + (i+1) + '. ' + choice_list[i] + '</div>');
+			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button">hints:<span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
+			for(var i=0; i<article_sentence.length; i++) {
+				$('div#content').append('<div id="hint_' + i + '" class="card background-secondary padding" style="display: none;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</div>');
 			}
-			$('div#content').append('<p></p>');
-			$('div#content').append('<div id="answer">A.' + answer_text + '</div>');
+			choice_list = shuffle_array(choice_list);
+
+			for(var i=0; i<choice_list.length; i++) {
+				if (choice_list[i] == answer_text) {
+					answer_of_choice_list = i;
+				}
+			}
+
+			$('div#content').append('<div id="answers" class="row child-borders"></div>');
+			for(var i=0; i<choice_list.length; i++) {
+				$('div#answers').append('<div id="answer_' + i + '" choice="' + i + '" class="answers sm-3 col">' + choice_list[i] + '</div>');
+			}
 		});
 	}
 
 	function onError(error) {
 		console.log("error = " + error + "\r\n");
 	}
+
+	$('body').on('click', 'button#hint_button', function() {
+		if (display_hint_num < article_sentence.length) {
+			$('div#hint_' + display_hint_num).show();
+			display_hint_num += 1;
+			$('span#hint_of_num').html(display_hint_num);
+			if (display_hint_num >= article_sentence.length) {
+				$("span#hint_of_num").removeClass("secondary").addClass("danger");
+			}
+		}
+	});
+
+	$('body').on('click', 'div.answers', function(){
+		$('div.answers').addClass("background-primary");
+		$('div#answer_'+answer_of_choice_list).removeClass("background-primary").addClass($(this).attr('choice') == answer_of_choice_list ? "background-success" : "background-danger");
+	});
+
 });
+
+
 
 function format_tag_array(text, tag) {
 	var array = [];
@@ -260,7 +313,7 @@ function format_tag_array(text, tag) {
 	var doc = parser.parseFromString(text, "text/html");
 	// documentオブジェクトから該当のタグのinnerTextを配列で返す
 	var tag_array = doc.querySelectorAll(tag);
-	for( var i=0; i<tag_array.length; i++) {
+	for(var i=0; i<tag_array.length; i++) {
 	  array.push(tag_array[i].innerText);
 	}
 	return array;
