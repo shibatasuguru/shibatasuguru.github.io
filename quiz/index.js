@@ -262,7 +262,7 @@
 	function viewPage(data) {
 		return new Promise(function(resolve, reject) {
 			$('div#content').html('');
-			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button" style="display: '+(article_sentence.length > 0 ? 'block' : 'none')+';">hints:<span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
+			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button" style="display: '+(article_sentence.length > 0 ? 'block' : 'none')+';">Hints: <span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
 			for(var i=0; i<article_sentence.length; i++) {
 				$('div#content').append('<div id="hint_' + i + '" class="card background-secondary padding" style="display: none;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</div>');
 			}
