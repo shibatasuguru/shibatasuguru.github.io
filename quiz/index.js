@@ -238,7 +238,7 @@
 				}).done(function(category_data) {
 					var candidate_choice_list = [];
 					for(var i=0; i<category_data.query.categorymembers.length; i++) {
-						if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0) {
+						if (category_data.query.categorymembers[i].ns == 0 && choice_list.indexOf(category_data.query.categorymembers[i].title) < 0 && category_data.query.categorymembers[i].title.indexOf("一覧") < 0) {
 							candidate_choice_list.push(category_data.query.categorymembers[i].title);
 						}
 					}
@@ -262,7 +262,7 @@
 	function viewPage(data) {
 		return new Promise(function(resolve, reject) {
 			$('div#content').html('');
-			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button">hints:<span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
+			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button" style="display: '+(article_sentence.length > 0 ? 'block' : 'none')+';">hints:<span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
 			for(var i=0; i<article_sentence.length; i++) {
 				$('div#content').append('<div id="hint_' + i + '" class="card background-secondary padding" style="display: none;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</div>');
 			}
@@ -330,7 +330,7 @@ function shuffle_array(array) {
 }
 
 function parenthesis_cut(text) {
-	return text_middle_cut(text, '(', ')').replace(' ', '');
+	return text_middle_cut(text, '(', ')').trim();
 }
 
 function text_middle_cut(text, start_char, end_char) {
