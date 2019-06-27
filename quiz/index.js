@@ -46,6 +46,7 @@
 			var get_page_content = function() {
 				var data_query_page = data_query_pages.shift();
 				if(data_query_page.ns == 0 && data_query_page.title.indexOf('曖昧さ回避') < 0) {
+					var data_query_page_title = data_query_page.title;
 					$.ajax({
 						url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+data_query_page.pageid,
 						data: {format: 'json'},
@@ -62,6 +63,7 @@
 							get_page_content();
 						}
 						else {
+							choice_list.push(parenthesis_cut(data_query_page_title));
 							resolve(data);
 						}
 					});
