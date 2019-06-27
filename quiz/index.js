@@ -276,7 +276,7 @@
 
 			$('div#content').append('<div id="answers" class="row child-borders"></div>');
 			for(var i=0; i<choice_list.length; i++) {
-				$('div#answers').append('<div id="answer_' + i + '" choice="' + i + '" class="answers sm-3 col">' + choice_list[i] + '</div>');
+				$('div#answers').append('<button id="answer_' + i + '" choice="' + i + '" class="answers sm-3 col">' + choice_list[i] + '</button>');
 			}
 		});
 	}
@@ -296,9 +296,9 @@
 		}
 	});
 
-	$('body').on('click', 'div.answers', function(){
-		$('div.answers').addClass("background-primary");
-		$('div#answer_'+answer_of_choice_list).removeClass("background-primary").addClass($(this).attr('choice') == answer_of_choice_list ? "background-success" : "background-danger");
+	$('body').on('click', 'button.answers', function(){
+		$('button.answers').addClass("background-primary");
+		$('button#answer_'+answer_of_choice_list).removeClass("background-primary").addClass($(this).attr('choice') == answer_of_choice_list ? "background-success" : "background-danger");
 	});
 
 });
