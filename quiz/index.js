@@ -28,7 +28,7 @@
 	出題対象となる記事をランダムで取得する
 	*/
 	function getPageid() {
-		$('div#content').html('Now Loading...');
+		$('div#content').html('<div align="center"><img src="./loading.gif" width="200px"></div>');
 		return new Promise(function(resolve, reject) {
 			$.ajax({
 				// wikipedia記事候補を20件取得
