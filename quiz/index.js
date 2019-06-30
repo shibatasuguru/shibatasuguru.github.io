@@ -264,7 +264,7 @@
 			$('div#content').html('');
 			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button" style="display: '+(article_sentence.length > 0 ? 'block' : 'none')+';">Hints: <span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
 			for(var i=0; i<article_sentence.length; i++) {
-				$('div#content').append('<div id="hint_' + i + '" class="card background-secondary padding" style="display: none;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</div>');
+				$('div#content').append('<button id="hint_' + i + '" class="card background-secondary padding hint_card" style="display: none; width: 100%;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</button>');
 			}
 			choice_list = shuffle_array(choice_list);
 
@@ -284,16 +284,24 @@
 	function onError(error) {
 		console.log("error = " + error + "\r\n");
 	}
-
-	$('body').on('click', 'button#hint_button', function() {
+	
+	function show_hint() {
 		if (display_hint_num < article_sentence.length) {
-			$('div#hint_' + display_hint_num).show();
+			$('button#hint_' + display_hint_num).show();
 			display_hint_num += 1;
 			$('span#hint_of_num').html(display_hint_num);
 			if (display_hint_num >= article_sentence.length) {
 				$("span#hint_of_num").removeClass("secondary").addClass("danger");
 			}
 		}
+	}
+
+	$('body').on('click', 'button#hint_button', function() {
+		show_hint();
+	});
+
+	$('body').on('click', 'button.hint_card', function() {
+		show_hint();
 	});
 
 	$('body').on('click', 'button.answers', function(){
