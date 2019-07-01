@@ -1,8 +1,15 @@
 ﻿$(function(){
+	/* ----------
+			設定
+	---------- */
 	// 言語
 	var lang = 'ja';
 	// 選択肢数
 	var choice_num = 4;
+	// GooAPI ID
+	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
+
+		
 	// 記事テキスト配列
 	var article_sentence = [];
 	// 問題文
@@ -18,9 +25,9 @@
 	
 	var questional_word = '';
 
-	var goo_api_id = '4d44f0ac780c80a9574f4c62536bd60b0958cd3f5a3574dbbc57f316bcf6ddee';
-
 	var display_hint_num = 0;
+
+	var is_answered = false;
 
 	function quiz() {
 		article_sentence = [];
@@ -31,6 +38,7 @@
 		category_list = [];
 		questional_word = '';
 		display_hint_num = 0;
+		is_answered = false;
 
 		// ローディング開始
 		$('div#content').html('<div align="center"><img src="./loading.gif" width="200px"></div>');
@@ -38,7 +46,8 @@
 		Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
 	}
 	quiz();
-	$('body').on('click', 'span#reload', function() {
+
+	$('body').on('click', 'div#reload', function() {
 		quiz();
 	});
 
@@ -52,8 +61,12 @@
 				url: 'https://'+lang+'.wikipedia.org/w/api.php?format=json&action=query&generator=random&grnlimit=20',
 				data: {format: 'json'},
 				dataType: 'jsonp'
-			}).done(function (data){
-				resolve(data);
+			}).done(function (data) {
+				var pages = [];
+				for(var key in data.query.pages) {
+					pages.push(data.query.pages[key])
+				}
+				resolve(pages);
 			});
 		});
 	}
@@ -61,21 +74,18 @@
 	/*
 	出題対象となる記事を取得する
 	*/
-	function getPageContent(data) {
+	function getPageContent(pages) {
 		return new Promise(function(resolve, reject) {
-			var data_query_pages = [];
-			for(var key in data.query.pages) {
-				data_query_pages.push(data.query.pages[key])
-			}
-			var get_page_content = function() {
-				var data_query_page = data_query_pages.shift();
-				if(data_query_page.ns == 0) {
-					var data_query_page_title = data_query_page.title;
+			var getPageContent = function() {
+				var page = pages.shift();
+				// 記事かどうかの判定
+				if(page.ns == 0) {
+					var title = page.title;
 					$.ajax({
-						url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+data_query_page.pageid,
+						url: 'https://'+lang+'.wikipedia.org/w/api.php?action=parse&pageid='+page.pageid,
 						data: {format: 'json'},
 						dataType: 'jsonp'
-					}).done(function (data){
+					}).done(function (data) {
 						var is_ambiguity = false;
 						for(var cate_key in data.parse.categories) {
 							if(data.parse.categories[cate_key]["*"].indexOf('曖昧さ回避') >= 0) {
@@ -84,32 +94,27 @@
 						}
 						// 曖昧さ回避のページは問題として使用しない
 						if (is_ambiguity) {
-							get_page_content();
+							getPageContent();
 						}
 						else {
-							answer_text = parenthesis_cut(data_query_page_title);
+							answer_text = parenthesis_cut(title);
 							choice_list.push(answer_text);
 							resolve(data);
 						}
 					});
 				}
 				else {
-					get_page_content();
+					getPageContent();
 				}
 			};
-			get_page_content();
+			getPageContent();
 		});
 	}
 
 	// 記事の文章を解析する
 	function analyzeArticleText(data) {
 		return new Promise(function(resolve, reject) {
-			var text = '';
-			for(var key in data.parse.text) {
-				text = data.parse.text[key];
-				break;
-			}
-			var article_text_array = format_tag_array(text, "p");
+			var article_text_array = getArrayByTags(data.parse.text["*"], "p");
 			var article_text = '';
 			// 文章でない、単語レベルのものは除外する
 			for(var i=0; i<article_text_array.length; i++) {
@@ -153,28 +158,31 @@
 	function CreateQuestionText(question_text_array) {
 		var first_postpositional_particle = 0;
 		var is_expected = false;
+		var last_noun_num = 0;
+		var is_noun = true;
 		for(var i=0; i<question_text_array.length; i++) {
 			// 括弧の中にいる間は除外
 			if(question_text_array[i].part_of_speech.indexOf('括弧') >= 0) {
 				is_expected = !is_expected;
 			}
 			// 最初に出てくる連用助詞（～は）の位置を取得
-			if(question_text_array[i].part_of_speech.indexOf('連用助詞') >= 0 && !is_expected) {
+			if(question_text_array[i].part_of_speech.indexOf('連用助詞') >= 0 && !is_expected && first_postpositional_particle == 0) {
 				first_postpositional_particle = i;
-				break;
 			}
-		}
-		
-		var last_noun_num = 0;
-		// 文章内で一番最後の名詞または括弧の位置を取得
-		for(var i=0; i<question_text_array.length; i++) {
+			// 文章内で一番最後の名詞または括弧の位置を取得
 			if(question_text_array[i].part_of_speech.indexOf('名詞') >= 0 || question_text_array[i].part_of_speech.indexOf('括弧') >= 0) {
 				last_noun_num = i;
 			}
-			if(question_text_array[i].part_of_speech.indexOf('名詞') >= 0) {
-				questional_word = question_text_array[i].word;
+			// 文章内で一番最後の名称を取得
+			if(question_text_array[i].part_of_speech.indexOf('名詞') >= 0 || question_text_array[i].part_of_speech.indexOf('格助詞') >= 0 || question_text_array[i].part_of_speech.indexOf('括弧') >= 0) {
+				if (!is_noun) {
+					questional_word = '';
+				}
+				is_noun = true;
+				questional_word += question_text_array[i].word;
+			} else {
+				is_noun = false;
 			}
-			
 		}
 		
 		var reading_point_cut_flg = true;
@@ -313,6 +321,7 @@
 			for(var i=0; i<choice_list.length; i++) {
 				$('div#answers').append('<button id="answer_' + i + '" choice="' + i + '" class="answers sm-3 col">' + choice_list[i] + '</button>');
 			}
+			$('div#content').append('<div id="reload" align="center" style="display:none;"><img src="./reload.png" width="30px"></div>');
 		});
 	}
 
@@ -342,16 +351,21 @@
 	});
 
 	$('body').on('click', 'button.answers', function() {
-		var is_cleared = $(this).attr('choice') == answer_of_choice_list;
-		$('button.answers').addClass("btn-primary");
-		$('button#answer_'+answer_of_choice_list).removeClass("btn-primary").addClass(is_cleared ? "btn-success" : "btn-danger");
+		if (!is_answered) {
+			var is_cleared = $(this).attr('choice') == answer_of_choice_list;
+			$('button.answers').addClass("btn-primary");
+			$('button#answer_'+answer_of_choice_list).removeClass("btn-primary").addClass(is_cleared ? "text-success btn-success" : "btn-danger");
+			$('div#point').append(is_cleared ? '<span class="badge success">O</span>' : '<span class="badge danger">X</span>');
+			$('div#reload').show();
+			is_answered = true;
+		}
 	});
 
 });
 
 
 
-function format_tag_array(text, tag) {
+function getArrayByTags(text, tag) {
 	var array = [];
 	// DOMParserオブジェクト
 	var parser = new DOMParser();
