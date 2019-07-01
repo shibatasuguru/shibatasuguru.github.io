@@ -31,10 +31,14 @@
 		category_list = [];
 		questional_word = '';
 		display_hint_num = 0;
+
+		// ローディング開始
+		$('div#content').html('<div align="center"><img src="./loading.gif" width="200px"></div>');
+
 		Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
 	}
 	quiz();
-	$('body').on('click', 'div#reload', function() {
+	$('body').on('click', 'span#reload', function() {
 		quiz();
 	});
 
@@ -42,7 +46,6 @@
 	出題対象となる記事をランダムで取得する
 	*/
 	function getPageid() {
-		$('div#content').html('<div align="center"><img src="./loading.gif" width="200px"></div>');
 		return new Promise(function(resolve, reject) {
 			$.ajax({
 				// wikipedia記事候補を20件取得
@@ -108,33 +111,44 @@
 			}
 			var article_text_array = format_tag_array(text, "p");
 			var article_text = '';
+			// 文章でない、単語レベルのものは除外する
 			for(var i=0; i<article_text_array.length; i++) {
-				if(article_text_array[i].indexOf("。") > 0 && article_text_array[i].indexOf("この記事には複数の") < 0) {
+				if(article_text_array[i].indexOf("。") > 0) {
 					article_text += text_middle_cut(article_text_array[i], '[', ']');
 				}
 			}
-			article_sentence = article_text.split("。");
+			// 改行をカットする
+			article_text = article_text.replace(/\r?\n/g, '');
+
 			$.ajax({
 				url: 'https://labs.goo.ne.jp/api/morph',
 				dataType: 'json',
 				type: 'POST',
-				data: {app_id: goo_api_id, sentence: article_sentence[0]},
+				data: {app_id: goo_api_id, sentence: article_text},
 			}).done(function(morph_data) {
+				var question_array = [];
 				var question_text_array = [];
+				var is_expected = false;
 				for(var i=0; i<morph_data.word_list.length; i++) {
 					for(var j=0; j<morph_data.word_list[i].length; j++) {
 						if(morph_data.word_list[i][j][1] != '空白') {
 							question_text_array.push({word: morph_data.word_list[i][j][0], part_of_speech: morph_data.word_list[i][j][1]});
+							if(morph_data.word_list[i][j][1] == '句点' && !is_expected) {
+								question_array.push(question_text_array);
+								question_text_array = [];
+							} else if (morph_data.word_list[i][j][1] == '括弧') {
+								is_expected = !is_expected;
+							}
 						}
 					}
 				}
-				CreateQuestionText(question_text_array);
-				CreateHint();
+				CreateQuestionText(question_array[0]);
+				CreateHint(question_array);
 				resolve(data);
 			});
 		});
 	}
-	
+
 	// 問題文を作成する
 	function CreateQuestionText(question_text_array) {
 		var first_postpositional_particle = 0;
@@ -177,13 +191,20 @@
 		question_text = '次のうち、' + question_text + 'はどれか。';
 	}
 
-	function CreateHint() {
-		var tmp_article_sentence = article_sentence;
-		article_sentence = [];
+	function CreateHint(array) {
+		var tmp_article_sentence = [];
+
+		for (var i=0; i<array.length; i++) {
+			var text = '';
+			for (var j=0; j<array[i].length; j++) {
+				text += array[i][j].word
+			}
+			tmp_article_sentence.push(text);
+		}
 
 		for (var i=1; i<tmp_article_sentence.length; i++) {
 			var is_use_hint = true;
-			if (tmp_article_sentence[i].replace(/\r?\n/g, '').length > 0) {
+			if (tmp_article_sentence[i].length > 0) {
 				for (var a=0; a<answer_text.length; a++) {
 					if (tmp_article_sentence[i].indexOf(answer_text.substr(a,2)) >= 0) {
 						is_use_hint = false;
@@ -278,7 +299,7 @@
 			$('div#content').html('');
 			$('div#content').append('<div class="card"><h5>'+question_text+'<br><button id="hint_button" style="display: '+(article_sentence.length > 0 ? 'block' : 'none')+';">Hints: <span id="hint_of_num" class="badge secondary">0</span> / <span class="badge">'+article_sentence.length+'</span></button></div>');
 			for(var i=0; i<article_sentence.length; i++) {
-				$('div#content').append('<button id="hint_' + i + '" class="card background-secondary padding hint_card" style="display: none; width: 100%;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</button>');
+				$('div#content').append('<button id="hint_' + i + '" class="card btn-secondary hint_card" style="display: none; width: 100%;">Hint ' + (i+1) + ': ' + article_sentence[i] + '</button>');
 			}
 			choice_list = shuffle_array(choice_list);
 
@@ -321,8 +342,9 @@
 	});
 
 	$('body').on('click', 'button.answers', function() {
-		$('button.answers').addClass("background-primary");
-		$('button#answer_'+answer_of_choice_list).removeClass("background-primary").addClass($(this).attr('choice') == answer_of_choice_list ? "background-success" : "background-danger");
+		var is_cleared = $(this).attr('choice') == answer_of_choice_list;
+		$('button.answers').addClass("btn-primary");
+		$('button#answer_'+answer_of_choice_list).removeClass("btn-primary").addClass(is_cleared ? "btn-success" : "btn-danger");
 	});
 
 });
