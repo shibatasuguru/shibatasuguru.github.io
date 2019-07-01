@@ -286,13 +286,15 @@
 	}
 	
 	function show_hint() {
+		$('button.hint_card').hide();
+		if (display_hint_num >= article_sentence.length) {
+			display_hint_num = 0;
+		}
+		
 		if (display_hint_num < article_sentence.length) {
 			$('button#hint_' + display_hint_num).show();
 			display_hint_num += 1;
 			$('span#hint_of_num').html(display_hint_num);
-			if (display_hint_num >= article_sentence.length) {
-				$("span#hint_of_num").removeClass("secondary").addClass("danger");
-			}
 		}
 	}
 
