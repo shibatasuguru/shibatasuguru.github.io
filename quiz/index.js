@@ -22,7 +22,21 @@
 
 	var display_hint_num = 0;
 
-	Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
+	function quiz() {
+		article_sentence = [];
+		question_text = '';
+		answer_text = '';
+		choice_list = [];
+		answer_of_choice_list = 0;
+		category_list = [];
+		questional_word = '';
+		display_hint_num = 0;
+		Promise.resolve().then(getPageid).then(getPageContent).then(analyzeArticleText).then(getCategoryWithRelevance).then(createChoiceList).then(viewPage).catch(onError);
+	}
+	quiz();
+	$('body').on('click', 'div#reload', function() {
+		quiz();
+	});
 
 	/*
 	出題対象となる記事をランダムで取得する
@@ -306,7 +320,7 @@
 		show_hint();
 	});
 
-	$('body').on('click', 'button.answers', function(){
+	$('body').on('click', 'button.answers', function() {
 		$('button.answers').addClass("background-primary");
 		$('button#answer_'+answer_of_choice_list).removeClass("background-primary").addClass($(this).attr('choice') == answer_of_choice_list ? "background-success" : "background-danger");
 	});
